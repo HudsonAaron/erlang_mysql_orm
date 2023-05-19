@@ -27,9 +27,9 @@ a() ->
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
-    error_logger:error_info({A, B}),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [{A, B}]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 b() ->
@@ -40,9 +40,9 @@ b() ->
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
-    error_logger:error_info({A, B}),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [{A, B}]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 c() ->
@@ -56,9 +56,9 @@ c() ->
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
-    error_logger:error_info({A, B}),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [{A, B}]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 d() ->
@@ -72,9 +72,9 @@ d() ->
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
-    error_logger:error_info({A, B}),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [{A, B}]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 d2() ->
@@ -88,9 +88,9 @@ d2() ->
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
-    error_logger:error_info({A, B}),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [{A, B}]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 e() ->
@@ -115,9 +115,9 @@ e() ->
         ?DB_COMMENT => "测试表格"
     },
     {ok, A} = db_util:create_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A),
+    io:format("~p~n", [R]),
     ok.
 
 f() ->
@@ -128,9 +128,9 @@ f() ->
         ?DB_REPLACE_VALS => [4, "测试12", 5, "aaa"]
     },
     {ok, A, B} = db_util:replace_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 g() ->
@@ -141,9 +141,9 @@ g() ->
         ?DB_WHERE => [?DB_OR(?DB_EQ(#aaa.id, 2), ?DB_EQ(#aaa.id, 5)), ?DB_AND, ?DB_EQ(#aaa.name, "测试1")]
     },
     {ok, A, B} = db_util:update_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A, B),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A, B),
+    io:format("~p~n", [R]),
     ok.
 
 h() ->
@@ -153,9 +153,9 @@ h() ->
         ?DB_DROP_COLUMN => [#aaa.name]
     },
     {ok, A} = db_util:drop_column_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A),
+    io:format("~p~n", [R]),
     ok.
 
 i() ->
@@ -164,9 +164,9 @@ i() ->
         ?DB_RENAME_TABLE => bbb
     },
     {ok, A} = db_util:rename_table_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A),
+    io:format("~p~n", [R]),
     ok.
 
 j() ->
@@ -183,9 +183,9 @@ j() ->
         ]
     },
     {ok, A} = db_util:add_column_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A),
+    io:format("~p~n", [R]),
     ok.
 
 k() ->
@@ -202,7 +202,7 @@ k() ->
         ]
     },
     {ok, A} = db_util:modify_column_string(Map),
-    error_logger:error_info(A),
-    R = api_db:execute(A),
-    error_logger:error_info(R),
+    io:format("~p~n", [A]),
+    R = mysql_poolboy:query(mypool, A),
+    io:format("~p~n", [R]),
     ok.
