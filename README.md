@@ -52,7 +52,7 @@ Map = #{
     ?DB_COMMENT => "测试表格"
 },
 {ok, SQL} = db_util:create_string(Map),
-Result = mysql_poolboy:execute(SQL).
+Result = mysql_poolboy:query(mypool, SQL).
 
 Map = #{
     ?DB_TABLE_FIELDS => [id, name, age, score],
@@ -63,7 +63,7 @@ Map = #{
     ?DB_LIMIT => 1
 },
 {ok, SQLFormat, WhereVals} = db_util:select_string(SelectMap),
-Result = mysql_poolboy:execute(SQL).
+Result = mysql_poolboy:query(mypool, SQL).
 
 Map = #{
     ?DB_TABLE_FIELDS => record_info(fields, aaa),
@@ -72,7 +72,7 @@ Map = #{
     ?DB_REPLACE_VALS => [4, "测试12", 5, "aaa"]
 },
 {ok, SQLFormat, Vals} = db_util:replace_string(Map),
-Result = mysql_poolboy:execute(SQLFormat, Vals).
+Result = mysql_poolboy:query(mypool, SQLFormat, Vals).
 
 Map = #{
     ?DB_TABLE_FIELDS => record_info(fields, aaa),
@@ -81,5 +81,5 @@ Map = #{
     ?DB_WHERE => [?DB_OR(?DB_EQ(#aaa.id, 2), ?DB_EQ(#aaa.id, 5)), ?DB_AND, ?DB_EQ(#aaa.name, "测试1")]
 },
 {ok, SQLFormat, Vals} = db_util:update_string(Map),
-Result = mysql_poolboy:execute(SQLFormat, Vals).
+Result = mysql_poolboy:query(mypool, SQLFormat, Vals).
 ```
