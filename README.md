@@ -1,9 +1,4 @@
 # mysql_orm
-+ **大家好|hey, you guys**
-</br>如果这开源库对大家有用处的话，可否请我家小朋友吃一颗糖，这会让我更有动力接着更新。
-</br>If it's helpful to you, could you invite my child to have a candy, because it make me more motivation to update the library.
-![请我家小朋友吃一颗糖](https://github.com/HudsonAaron/mysql_orm/blob/main/wish_you_have_a_nice_day.jpg)
-(请用微信扫码|Use Wechat to scan the QRCode)
 + **描述|desc**
 </br>这个是erlang版本的mysql orm开源操作库，这里有些操作方式给你们。
 </br>This is a library for mysql by erlang. Here are operation manual for you.
