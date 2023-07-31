@@ -101,6 +101,8 @@ parse_fields_2(
     parse_fields_2(Tail, TotalFields, PreFormat, Formats ++ [SFormat]).
 
 %% 转化表格描述
+parse_table_comment("") ->
+    {ok, "ENGINE = InnoDB CHARSET = utf8"};
 parse_table_comment(Comment) ->
     {ok, io_lib:format("ENGINE = InnoDB CHARSET = utf8 comment = '~ts'", [Comment])}.
 %% 转化字段描述
@@ -136,7 +138,7 @@ parse_field_key_2(?DB_KEY_PRI, Keys, TotalFields, PreFormat) when is_list(Keys) 
     case PreFormat of
         "drop" -> %% 删除主键索引不需要名称
             KFormat = io_lib:format("~s primary key", [PreFormat]);
-        "add" ->
+        _ ->
             {ok, KeyNames} = db_util:get_fields(Keys, TotalFields),
             FieldNames = string:join([io_lib:format("`~s`", [KN]) || KN <- KeyNames], ","),
             KFormat = io_lib:format("~s primary key (~s)", [PreFormat, FieldNames])
@@ -148,7 +150,7 @@ parse_field_key_2(?DB_KEY_UNI, Keys, TotalFields, PreFormat) when is_list(Keys) 
     case PreFormat of
         "drop" -> %% 删除唯一索引不需要唯一标识
             KFormat = io_lib:format("~s index uni_~s", [PreFormat, AliasName]);
-        "add" ->
+        _ ->
             FieldNames = string:join([io_lib:format("`~s`", [KN]) || KN <- KeyNames], ","),
             KFormat = io_lib:format("~s unique index uni_~s (~s)", [PreFormat, AliasName, FieldNames])
     end,
@@ -159,7 +161,7 @@ parse_field_key_2(?DB_KEY_IDX, Keys, TotalFields, PreFormat) when is_list(Keys) 
     case PreFormat of
         "drop" -> %% 删除索引只需要索引名
             KFormat = io_lib:format("~s index idx_~s", [PreFormat, AliasName]);
-        "add" ->
+        _ ->
             FieldNames = string:join([io_lib:format("`~s`", [KN]) || KN <- KeyNames], ","),
             KFormat = io_lib:format("~s index idx_~s (~s)", [PreFormat, AliasName, FieldNames])
     end,

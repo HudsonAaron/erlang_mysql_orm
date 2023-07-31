@@ -28,11 +28,12 @@ filter_string_format(?DB_CREATE_KEYS, QueryMap) -> %% 创建语句
     end,
     TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
     {ok, CFieldFormat} = db_parse:parse_fields(CreateFields, TotalFields),
-    {ok, CKeyFormat} = db_parse:parse_field_key(CreateFields, TotalFields),
+    %% 拼接创建表格索引
+    Fields = maps:get(?DB_ADD_INDEX, QueryMap, []),
+    {ok, CKeyFormat} = db_parse:parse_field_key(CreateFields ++ Fields, TotalFields),
     CreateFormat = io_lib:format(
         "create table ~s `~s` (~ts, ~ts)",
-        [TableExtra, TableName, CFieldFormat, CKeyFormat]
-    ),
+        [TableExtra, TableName, CFieldFormat, CKeyFormat]),
     {ok, CreateFormat};
 filter_string_format(?DB_DROP_TABLE, QueryMap) -> %% 删除表格
     {ok, TableName} = get_table_name(QueryMap),
