@@ -84,6 +84,7 @@ parse_fields_2(
         data_type = DataType,
         is_unsigned = IsUnsigned,
         default = Default,
+        extra = Extra,
         comment = Comment,
         after_field = AfterFieldID
     } | Tail],
@@ -94,9 +95,13 @@ parse_fields_2(
     {ok, CommentFormat} = parse_field_comment(Comment),
     {ok, [AfterFieldName]} = db_util:get_fields([AfterFieldID], TotalFields),
     {ok, AfterFormat} = parse_field_after(AfterFieldName),
+    case Extra of
+        ?DB_EXTRA_AUTO -> ExtraMsg = ?DB_EXTRA_AUTO;
+        _ -> ExtraMsg = ""
+    end,
     SFormat = io_lib:format(
-        "~s `~s` ~s ~s ~ts ~ts ~s",
-        [PreFormat, FieldName, DataType, Unsigned, DefaultFormat, CommentFormat, AfterFormat]
+        "~s `~s` ~s ~s ~ts ~s ~ts ~s",
+        [PreFormat, FieldName, DataType, Unsigned, DefaultFormat, ExtraMsg, CommentFormat, AfterFormat]
     ),
     parse_fields_2(Tail, TotalFields, PreFormat, Formats ++ [SFormat]).
 
@@ -127,9 +132,13 @@ parse_field_key_1([], _TotalFields, _PreFormat, KeyFormats) ->
     {ok, string:join(KeyFormats, ",")};
 parse_field_key_1([#db_field{key = null} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 其他情况
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
+parse_field_key_1([#db_field{key = ?DB_EXTRA_AUTO} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 忽略额外信息
+    parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
 parse_field_key_1([#db_field{field_name = FieldID, key = Key} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 索引
     {ok, KFormat} = parse_field_key_2(Key, [FieldID], TotalFields, PreFormat),
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats ++ [KFormat]);
+parse_field_key_1([{?DB_EXTRA_AUTO, _FieldIDs} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 忽略额外信息
+    parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
 parse_field_key_1([{Key, FieldIDs} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 索引
     {ok, KFormat} = parse_field_key_2(Key, FieldIDs, TotalFields, PreFormat),
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats ++ [KFormat]).

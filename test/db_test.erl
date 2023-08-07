@@ -223,6 +223,43 @@ e2() ->
     error_logger:error_info(R),
     ok.
 
+e3() ->
+    Map = #{
+        ?DB_TABLE_FIELDS => ["id", "name", "age", "height", "score"],
+        ?DB_TABLE_NAME => ddd,
+        ?DB_CREATE_KEYS => [
+            #db_field{
+                field_name = "id",
+                %% field_name = id, %% 这个也可以
+                data_type = ?DB_TINYINT(1),
+                extra = ?DB_EXTRA_AUTO,
+                comment = "测试ID"
+            },
+            #db_field{
+                field_name = "name",
+                data_type = ?DB_VARCHAR(20),
+                comment = "测试名称"
+            },
+            #db_field{
+                field_name = "age",
+                data_type = ?DB_SMALLINT(2),
+                comment = "年龄"
+            },
+            #db_field{
+                field_name = "score",
+                data_type = ?DB_INT(11),
+                comment = "分数"
+            }
+        ],
+        ?DB_ADD_INDEX => [?DB_KEY_PRI(["id"]), ?DB_KEY_IDX(["age"])],
+        ?DB_COMMENT => "测试表格"
+    },
+    {ok, A} = db_util:create_string(Map),
+    error_logger:error_info(A),
+    R = api_db:execute(A),
+    error_logger:error_info(R),
+    ok.
+
 f() ->
     Map = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),

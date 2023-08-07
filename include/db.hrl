@@ -54,14 +54,22 @@
 -define(DB_KEY_UNI(V),        {?DB_KEY_UNI, V}).                         %% 键值类型 - 唯一索引
 -define(DB_KEY_IDX,           "index").                                  %% 键值类型 - 普通索引
 -define(DB_KEY_IDX(V),        {?DB_KEY_IDX, V}).                         %% 键值类型 - 普通索引
+-define(DB_EXTRA_AUTO,        "auto_increment").                         %% 额外类型 - 自增ID
+-define(DB_EXTRA_AUTO(V),     {?DB_EXTRA_AUTO, V}).                      %% 额外类型 - 自增ID
+
 -define(DB_UNSIGNED,          "unsigned").                               %% 无符号 - 非负整型
 -define(DB_COMMENT,           "comment").                                %% 描述
 -define(DB_AFTER,             "after").                                  %% 在~字段之后
 
+-define(DB_TINYINT,           "tinyint").                                %% 数据类型 - mini整型 (-128~127)
 -define(DB_TINYINT(Num),      io_lib:format("tinyint(~w)", [Num])).      %% 数据类型 - mini整型 (-128~127)
+-define(DB_SMALLINT,          "smallint").                               %% 数据类型 - 小整型 (-32768~32767)
 -define(DB_SMALLINT(Num),     io_lib:format("smallint(~w)", [Num])).     %% 数据类型 - 小整型 (-32768~32767)
+-define(DB_MEDIUMINT,         "mediumint").                              %% 数据类型 - 中整型 (-8388608~8388607)
 -define(DB_MEDIUMINT(Num),    io_lib:format("mediumint(~w)", [Num])).    %% 数据类型 - 中整型 (-8388608~8388607)
+-define(DB_INT,               "int").                                    %% 数据类型 - 整型 (-2147483648~2147483647)
 -define(DB_INT(Num),          io_lib:format("int(~w)", [Num])).          %% 数据类型 - 整型 (-2147483648~2147483647)
+-define(DB_BIGINT,            "bigint").                                 %% 数据类型 - 大整型 (-9223372036854775808~9223372036854775807)
 -define(DB_BIGINT(Num),       io_lib:format("bigint(~w)", [Num])).       %% 数据类型 - 大整型 (-9223372036854775808~9223372036854775807)
 -define(DB_CHAR(Num),         io_lib:format("char(~w)", [Num])).         %% 数据类型 - 定长字符串
 -define(DB_VARCHAR(Num),      io_lib:format("varchar(~w)", [Num])).      %% 数据类型 - 可变长字符串
@@ -69,6 +77,7 @@
 -define(DB_TEXT,              "text").                                   %% 数据类型 - 可变长字符串 (0~65535字节)
 -define(DB_MEDIUMTEXT,        "mediumtext").                             %% 数据类型 - 可变长字符串 (0~16772150字节)
 -define(DB_LONGTEXT,          "longtext").                               %% 数据类型 - 可变长字符串 (0~4294967295字节)
+-define(DB_JSON,              "json").                                   %% 数据类型 - 可变长字符串 (0~4294967295字节)
 
 -define(DB_TABLE_NAME,               table_name).             %% 数据库表名
 -define(DB_TABLE_FIELDS,             table_fields).           %% 数据库表字段名
@@ -101,7 +110,8 @@
     data_type = "",             %% 数据类型
     is_unsigned = false,        %% 是否是无符号
     default = null,             %% 默认值
-    key = null,                 %% null | primary | unique | index (当前版本 add_col | modify_col 不支持)
+    key = null,                 %% null | primary | unique | index
+    extra = null,               %% null | auto_increment
     comment = "",               %% 字段描述
     after_field = ""            %% 在~字段之后
 }).
