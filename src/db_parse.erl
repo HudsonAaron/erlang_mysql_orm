@@ -132,13 +132,9 @@ parse_field_key_1([], _TotalFields, _PreFormat, KeyFormats) ->
     {ok, string:join(KeyFormats, ",")};
 parse_field_key_1([#db_field{key = null} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 其他情况
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
-parse_field_key_1([#db_field{key = ?DB_EXTRA_AUTO} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 忽略额外信息
-    parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
 parse_field_key_1([#db_field{field_name = FieldID, key = Key} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 索引
     {ok, KFormat} = parse_field_key_2(Key, [FieldID], TotalFields, PreFormat),
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats ++ [KFormat]);
-parse_field_key_1([{?DB_EXTRA_AUTO, _FieldIDs} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 忽略额外信息
-    parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats);
 parse_field_key_1([{Key, FieldIDs} | Tail], TotalFields, PreFormat, KeyFormats) -> %% 索引
     {ok, KFormat} = parse_field_key_2(Key, FieldIDs, TotalFields, PreFormat),
     parse_field_key_1(Tail, TotalFields, PreFormat, KeyFormats ++ [KFormat]).
@@ -211,9 +207,8 @@ parse_where_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals
 
 parse_where_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_IN andalso is_list(WVal) -> %% 范围匹配
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
-    WFormat = io_lib:format("`~s` ~s (?)", [Field, WType]),
-    WVal2 = string:join([unicode:characters_to_list(util:term_to_bitstring(A)) || A <- WVal], ","),
-    parse_where_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ [WVal2]);
+    WFormat = io_lib:format("`~s` ~s (~s)", [Field, WType, string:join(lists:duplicate(length(WVal), "?"), ",")]),
+    parse_where_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ WVal);
 
 parse_where_1([{WKey, WType, WTFormat, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_LIKE -> %% 模糊匹配
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),

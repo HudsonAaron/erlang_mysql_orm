@@ -77,7 +77,7 @@
 -define(DB_TEXT,              "text").                                   %% 数据类型 - 可变长字符串 (0~65535字节)
 -define(DB_MEDIUMTEXT,        "mediumtext").                             %% 数据类型 - 可变长字符串 (0~16772150字节)
 -define(DB_LONGTEXT,          "longtext").                               %% 数据类型 - 可变长字符串 (0~4294967295字节)
--define(DB_JSON,              "json").                                   %% 数据类型 - 可变长字符串 (0~4294967295字节)
+-define(DB_JSON,              "json").                                   %% 数据类型 - 可变长字符串 (0~65535字节)
 
 -define(DB_TABLE_NAME,               table_name).             %% 数据库表名
 -define(DB_TABLE_FIELDS,             table_fields).           %% 数据库表字段名
