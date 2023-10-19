@@ -10,15 +10,17 @@
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
 
+-define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门
--define(DB_AND,                      "and").                             %% 并
--define(DB_AND(KV1, KV2),            {KV1, ?DB_AND, KV2}).               %% 并
+-define(DB_AND,                      "and").                             %% 与
+-define(DB_AND(KV1, KV2),            {KV1, ?DB_AND, KV2}).               %% 与
 -define(DB_OR,                       "or").                              %% 或
 -define(DB_OR(KV1, KV2),             {KV1, ?DB_OR, KV2}).                %% 或
+-define(DB_NOT,                      "not").                             %% 非
 %% 标识符
 -define(DB_IN,                       "in").                              %% 在~之中
 -define(DB_IN(K, V),                 {K, ?DB_IN, V}).                    %% 在~之中
--define(DB_NIN,                      "not in").                          %% 不在~之中
+-define(DB_NIN,                      ?DB_NOT ++ " " ++ "in").            %% 不在~之中
 -define(DB_NIN(K, V),                {K, ?DB_NIN, V}).                   %% 不在~之中
 
 -define(DB_AS,                       "as").                              %% 别名
@@ -26,16 +28,31 @@
 
 -define(DB_AVG(K),                   {"avg(`~s`)", K}).                  %% 平均值
 -define(DB_SUM(K),                   {"sum(`~s`)", K}).                  %% 统计K之和
+
 -define(DB_COUNT_ALL,                {"count(~s)", "*"}).                %% 统计K行数量
 -define(DB_COUNT(K),                 {"count(`~s`)", K}).                %% 统计K行数量
+
+-define(DB_IF,                       "if").                              %% 条件判断
+-define(DB_IF(Cond, True, False),    {?DB_IF, Cond, True, False}).       %% 条件判断
+-define(DB_IF_NULL,                  "ifnull").                          %% 如果null则返回默认值
+-define(DB_IF_NULL(K, Default),      {?DB_IF_NULL, K, Default}).         %% 如果null则返回默认值
+-define(DB_IF_NULL_SUM(K),           ?DB_IF_NULL(?DB_SUM(K), 0)).        %% 统计K之和 null返回0
+
 -define(DB_MAX(K),                   {"max(`~s`)", K}).                  %% 字段K的最大值
 -define(DB_MIN(K),                   {"min(`~s`)", K}).                  %% 字段K的最小值
 -define(DB_FROM_UNIXTIME(K),         {"from_unixtime(`~s`)", K}).        %% unixtime转date
 -define(DB_LIKE,                     "like").                            %% 模糊匹配
+-define(DB_LIKE_ALL(Match),          {?DB_LIKE, "'~ts'", Match}).        %% 模糊匹配 - 全部
 -define(DB_LIKE_ALL(K, Match),       {K, ?DB_LIKE, "'~ts'", Match}).     %% 模糊匹配 - 全部
+-define(DB_LIKE_MIDDLE(Match),       {?DB_LIKE, "'%~ts%'", Match}).      %% 模糊匹配 - 中间
 -define(DB_LIKE_MIDDLE(K, Match),    {K, ?DB_LIKE, "'%~ts%'", Match}).   %% 模糊匹配 - 中间
+-define(DB_LIKE_PREFIX(Match),       {?DB_LIKE, "'~ts%'", Match}).       %% 模糊匹配 - 前缀
 -define(DB_LIKE_PREFIX(K, Match),    {K, ?DB_LIKE, "'~ts%'", Match}).    %% 模糊匹配 - 前缀
+-define(DB_LIKE_SUFFIX(Match),       {?DB_LIKE, "'%~ts'", Match}).       %% 模糊匹配 - 后缀
 -define(DB_LIKE_SUFFIX(K, Match),    {K, ?DB_LIKE, "'%~ts'", Match}).    %% 模糊匹配 - 后缀
+-define(DB_REGEXP,                   "regexp").                          %% 正则表达式
+-define(DB_REGEXP(K, Match),         {K, ?DB_REGEXP, "'~ts'", Match}).   %% 正则表达式 [0-9] [a-z] [a-Z] [0-9a-zA-Z]
+%% SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name regexp 'card_[0-9]';
 
 %% 条件判断字符
 -define(DB_EQ(K, V),          {K, "=", V}).                              %% 等于
@@ -44,6 +61,8 @@
 -define(DB_LE(K, V),          {K, "<=", V}).                             %% 小于等于
 -define(DB_GT(K, V),          {K, ">", V}).                              %% 大于
 -define(DB_GE(K, V),          {K, ">=", V}).                             %% 大于等于
+-define(DB_IS(K, V),          {K, "is", V}).                             %% 是
+-define(DB_NIS(K, V),         {K, ?DB_NOT ++ " " ++ "is", V}).           %% 不是
 
 -define(DB_DESC(V),           {"desc", V}).                              %% 降序
 -define(DB_ASC(V),            {"asc", V}).                               %% 升序
@@ -60,6 +79,7 @@
 -define(DB_UNSIGNED,          "unsigned").                               %% 无符号 - 非负整型
 -define(DB_COMMENT,           "comment").                                %% 描述
 -define(DB_AFTER,             "after").                                  %% 在~字段之后
+-define(DB_IGNORE,            "ignore").                                 %% 忽略
 
 -define(DB_TINYINT,           "tinyint").                                %% 数据类型 - mini整型 (-128~127)
 -define(DB_TINYINT(Num),      io_lib:format("tinyint(~w)", [Num])).      %% 数据类型 - mini整型 (-128~127)
@@ -79,30 +99,32 @@
 -define(DB_LONGTEXT,          "longtext").                               %% 数据类型 - 可变长字符串 (0~4294967295字节)
 -define(DB_JSON,              "json").                                   %% 数据类型 - 可变长字符串 (0~65535字节)
 
--define(DB_TABLE_NAME,               table_name).             %% 数据库表名
--define(DB_TABLE_FIELDS,             table_fields).           %% 数据库表字段名
--define(DB_CREATE_KEYS,              create_keys).            %% 创建表格字段名
--define(DB_CREATE_KEYS_NOT_EXISTS,   create_keys_ne).         %% 表格不存在时创建表格字段名
--define(DB_DROP_TABLE,               drop_table).             %% 删除表格
--define(DB_RENAME_TABLE,             rename_table).           %% 重命名表格
--define(DB_DROP_COLUMN,              drop_column).            %% 删除表格字段
--define(DB_ADD_COLUMN,               add_column).             %% 添加表格字段
--define(DB_MODIFY_COLUMN,            modify_column).          %% 修改表格字段
--define(DB_ADD_MODIFY_COLUMN,        add_modify_column).      %% 不存在就添加字段，存在则修改表格字段
--define(DB_ADD_INDEX,                add_index).              %% 添加索引
--define(DB_DROP_INDEX,               drop_index).             %% 删除索引
--define(DB_SELECT_KEYS,              select_keys).            %% 查询字段名
--define(DB_INSERT_KEYS,              insert_keys).            %% 插入字段名
--define(DB_INSERT_VALS,              insert_vals).            %% 插入字段数据
--define(DB_REPLACE_KEYS,             replace_keys).           %% 替换字段名
--define(DB_REPLACE_VALS,             replace_vals).           %% 替换字段数据
--define(DB_UPDATE_SETS,              update_sets).            %% 更新字段数据
--define(DB_DELETE,                   delete).                 %% 删除字段数据
--define(DB_TRUNCATE,                 truncate).               %% 清空表数据
--define(DB_WHERE,                    where).                  %% 匹配条件
--define(DB_GROUP_BY,                 group_by).               %% 分组
--define(DB_ORDER_BY,                 order_by).               %% 排序
--define(DB_LIMIT,                    limit).                  %% 限制数量
+-define(DB_TABLE_NAME,                          table_name).             %% 数据库表名
+-define(DB_TABLE_FIELDS,                        table_fields).           %% 数据库表字段名
+-define(DB_SHOW_TABLES,                         show_tables).            %% 获取表名
+-define(DB_CREATE_KEYS,                         create_keys).            %% 创建表格字段名
+-define(DB_CREATE_KEYS_NOT_EXISTS,              create_keys_ne).         %% 表格不存在时创建表格字段名
+-define(DB_DROP_TABLE,                          drop_table).             %% 删除表格
+-define(DB_RENAME_TABLE,                        rename_table).           %% 重命名表格
+-define(DB_DROP_COLUMN,                         drop_column).            %% 删除表格字段
+-define(DB_ADD_COLUMN,                          add_column).             %% 添加表格字段
+-define(DB_MODIFY_COLUMN,                       modify_column).          %% 修改表格字段
+-define(DB_ADD_MODIFY_COLUMN,                   add_modify_column).      %% 不存在就添加字段，存在则修改表格字段
+-define(DB_ADD_INDEX,                           add_index).              %% 添加索引
+-define(DB_DROP_INDEX,                          drop_index).             %% 删除索引
+-define(DB_SELECT_KEYS,                         select_keys).            %% 查询字段名
+-define(DB_INSERT_KEYS,                         insert_keys).            %% 插入字段名
+-define(DB_INSERT_IGNORE_KEYS,                  insert_ignore_keys).     %% 插入字段名，存在则不插入数据，反之插入数据
+-define(DB_INSERT_VALS,                         insert_vals).            %% 插入字段数据
+-define(DB_REPLACE_KEYS,                        replace_keys).           %% 替换字段名
+-define(DB_REPLACE_VALS,                        replace_vals).           %% 替换字段数据
+-define(DB_UPDATE_SETS,                         update_sets).            %% 更新字段数据
+-define(DB_DELETE,                              delete).                 %% 删除字段数据
+-define(DB_TRUNCATE,                            truncate).               %% 清空表数据
+-define(DB_WHERE,                               where).                  %% 匹配条件
+-define(DB_GROUP_BY,                            group_by).               %% 分组
+-define(DB_ORDER_BY,                            order_by).               %% 排序
+-define(DB_LIMIT,                               limit).                  %% 限制数量
 
 %% 字段
 -record(db_field, {
@@ -117,7 +139,7 @@
 }).
 
 %% 条件判断
--define(DB_IF(Condition, TrueRet, FalseRet),
+-define(DB_IF_(Condition, TrueRet, FalseRet),
     begin
         case Condition of
             true -> TrueRet;

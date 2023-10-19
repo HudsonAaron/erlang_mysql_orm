@@ -3,13 +3,26 @@
 这个工具，意在希望降低mysql开发难度
 
 ###（1）版本新增内容
-+ `2023-09-15`
-  + (a) 修复`where`参数为列表，格式错误
++ `2023-10-19`
+    - (a) `if`，支持条件判断
+    - (b) `ifnull`，支持null条件判断，新增一个简化用法if_null_sum，用于判断sum结果是否为null
+    - (c) `show tables`，支持查询表名列表
+    - (d) `from_unixtime`
+    - (e) `like`，支持更多的模糊查询的情况
+    - (f) `count`
+    - (g) `sum`
+    - (h) `avg`
+    - (i) `min`
+    - (j) `max`
+    - (k) `as`
+    - (l) `in`
+    - (m) `regexp`
+    - (n) `ignore`
 + `2023-08-07`
-  + (a) `auto_increment`，支持自增ID
+    - (a) `auto_increment`，支持自增ID
 + `2023-08-02`
-  + (a) `json`，支持json数据格式
-  + (b) 支持tinyint、smallint、int、bigint默认宽度
+    - (a) `json`，支持json数据格式
+    - (b) 支持tinyint、smallint、int、bigint默认宽度
 + `2023-07-31`
     - (a) `add primary key`，支持添加主键索引
     - (b) `add unique index`，支持添加唯一索引

@@ -21,7 +21,23 @@
     local = ""
 }).
 
-a() ->
+a1() ->
+    QueryMap = #{
+        ?DB_SHOW_TABLES => []
+    },
+    {ok, Format} = db_util:show_table_string(QueryMap),
+    R = api_db:execute(Format),
+    ok.
+
+a2() ->
+    QueryMap = #{
+        ?DB_SHOW_TABLES => [?DB_LIKE("a")]
+    },
+    {ok, Format} = db_util:show_table_string(QueryMap),
+    R = api_db:execute(Format),
+    ok.
+
+b1() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => [id, name, age, score],
         ?DB_TABLE_NAME => aaa,
@@ -36,7 +52,7 @@ a() ->
     error_logger:error_info(R),
     ok.
 
-b() ->
+b2() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => [id, name, age, score],
         ?DB_TABLE_NAME => aaa,
@@ -49,7 +65,46 @@ b() ->
     error_logger:error_info(R),
     ok.
 
-c() ->
+b3() ->
+    SelectMap = #{
+        ?DB_TABLE_FIELDS => [id, name, age, score],
+        ?DB_TABLE_NAME => aaa,
+        ?DB_SELECT_KEYS => [?DB_IF(?DB_EQ(?DB_SUM(id)), 1, 0), ?DB_MAX(name)],
+        ?DB_LIMIT => 1
+    },
+    {ok, A, B} = db_util:select_string(SelectMap),
+    error_logger:error_info({A, B}),
+    R = api_db:execute(A, B),
+    error_logger:error_info(R),
+    ok.
+
+b4() ->
+    SelectMap = #{
+        ?DB_TABLE_FIELDS => [id, name, age, score],
+        ?DB_TABLE_NAME => aaa,
+        ?DB_SELECT_KEYS => [?DB_IF_NULL_SUM(id, 0), ?DB_MAX(name)],
+        ?DB_LIMIT => 1
+    },
+    {ok, A, B} = db_util:select_string(SelectMap),
+    error_logger:error_info({A, B}),
+    R = api_db:execute(A, B),
+    error_logger:error_info(R),
+    ok.
+
+b5() ->
+    SelectMap = #{
+        ?DB_TABLE_FIELDS => [id, name, age, score],
+        ?DB_TABLE_NAME => aaa,
+        ?DB_SELECT_KEYS => [?DB_IF_NULL(id, 0), ?DB_MAX(name)],
+        ?DB_LIMIT => 1
+    },
+    {ok, A, B} = db_util:select_string(SelectMap),
+    error_logger:error_info({A, B}),
+    R = api_db:execute(A, B),
+    error_logger:error_info(R),
+    ok.
+
+b6() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),
         ?DB_TABLE_NAME => aaa,
@@ -65,7 +120,7 @@ c() ->
     error_logger:error_info(R),
     ok.
 
-d1() ->
+b7() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),
         ?DB_TABLE_NAME => aaa,
@@ -81,7 +136,7 @@ d1() ->
     error_logger:error_info(R),
     ok.
 
-d2() ->
+b8() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),
         ?DB_TABLE_NAME => aaa,
@@ -97,7 +152,7 @@ d2() ->
     error_logger:error_info(R),
     ok.
 
-d3() ->
+b9() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),
         ?DB_TABLE_NAME => aaa,
@@ -113,7 +168,7 @@ d3() ->
     error_logger:error_info(R),
     ok.
 
-d4() -> %% 子查询
+b10() -> %% 子查询
     SubSelectMap = #{
         ?DB_TABLE_FIELDS => ["id", "name", "height"],
         ?DB_TABLE_NAME => bbb,
@@ -137,7 +192,7 @@ d4() -> %% 子查询
     error_logger:error_info(R),
     ok.
 
-d5() -> %% 子查询
+b11() -> %% 子查询
     SubSelectMap = #{
         ?DB_TABLE_FIELDS => ["id", "name", "height"],
         ?DB_TABLE_NAME => bbb,

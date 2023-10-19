@@ -10,13 +10,45 @@
 -author("zhuhaolin").
 %% API
 -export([
-    filter_string_format/2
+    filter_show_table_format/1,                        %% 检测语句参数格式 - 获取表名
+    filter_create_keys_format/1,                       %% 检测语句参数格式 - 建表语句
+    filter_drop_table_format/1,                        %% 检测语句参数格式 - 删表语句
+    filter_rename_table_format/1,                      %% 检测语句参数格式 - 改名语句
+    filter_drop_column_format/1,                       %% 检测语句参数格式 - 删除表格字段
+    filter_add_column_format/1,                        %% 检测语句参数格式 - 添加表格字段
+    filter_modify_column_format/1,                     %% 检测语句参数格式 - 修改表格字段
+    filter_add_modify_column_format/1,                 %% 检测语句参数格式 - 不存在就添加字段，存在则修改表格字段
+    filter_add_index_format/1,                         %% 检测语句参数格式 - 添加索引
+    filter_drop_index_format/1,                        %% 检测语句参数格式 - 删除索引
+    filter_comment_format/1,                           %% 检测语句参数格式 - 创建表格描述
+    filter_select_keys_format/1,                       %% 检测语句参数格式 - 查询字段名
+    filter_insert_keys_format/1,                       %% 检测语句参数格式 - 插入字段名
+    filter_insert_vals_format/1,                       %% 检测语句参数格式 - 插入字段数据
+    filter_replace_keys_format/1,                      %% 检测语句参数格式 - 替换字段名
+    filter_replace_vals_format/1,                      %% 检测语句参数格式 - 替换字段数据
+    filter_update_sets_format/1,                       %% 检测语句参数格式 - 更新字段数据
+    filter_delete_data_format/1,                       %% 检测语句参数格式 - 删除字段数据
+    filter_truncate_table_format/1,                    %% 检测语句参数格式 - 清空表数据
+    filter_where_format/1,                             %% 检测语句参数格式 - 条件匹配
+    filter_group_by_format/1,                          %% 检测语句参数格式 - 查询分组
+    filter_order_by_format/1,                          %% 检测语句参数格式 - 查询排序
+    filter_limit_format/1                              %% 检测语句参数格式 - 查询限制数量
 ]).
 
 -include("db.hrl").
 
-%% 检测语句参数格式
-filter_string_format(?DB_CREATE_KEYS, QueryMap) -> %% 创建语句
+%% 检测语句参数格式 - 获取表名
+filter_show_table_format(QueryMap) ->
+    case maps:get(?DB_SHOW_TABLES, QueryMap, []) of
+        [] -> Format = "";
+        Like ->
+            {ok, Format} = db_parse:parse_like(Like, [], [])
+    end,
+    ShowFormat = io_lib:format("show tables ~ts", [Format]),
+    {ok, ShowFormat}.
+
+%% 检测语句参数格式 - 建表语句
+filter_create_keys_format(QueryMap) -> %% 创建语句
     {ok, TableName} = get_table_name(QueryMap),
     %% ?DB_CREATE_KEYS := [#db_field{}]
     case maps:get(?DB_CREATE_KEYS_NOT_EXISTS, QueryMap, []) of
@@ -34,17 +66,23 @@ filter_string_format(?DB_CREATE_KEYS, QueryMap) -> %% 创建语句
     CreateFormat = io_lib:format(
         "create table ~s `~s` (~ts, ~ts)",
         [TableExtra, TableName, CFieldFormat, CKeyFormat]),
-    {ok, CreateFormat};
-filter_string_format(?DB_DROP_TABLE, QueryMap) -> %% 删除表格
+    {ok, CreateFormat}.
+
+%% 检测语句参数格式 - 删表语句
+filter_drop_table_format(QueryMap) -> %% 删除表格
     {ok, TableName} = get_table_name(QueryMap),
     DropTbFormat = io_lib:format("drop table ~s", [TableName]),
-    {ok, DropTbFormat};
-filter_string_format(?DB_RENAME_TABLE, QueryMap) -> %% 重命名表格
+    {ok, DropTbFormat}.
+
+%% 检测语句参数格式 - 改名语句
+filter_rename_table_format(QueryMap) -> %% 重命名表格
     {ok, TableName} = get_table_name(QueryMap),
     {ok, NewTableName} = get_table_name(maps:get(?DB_RENAME_TABLE, QueryMap, error)),
     RenameTbFormat = io_lib:format("alter table ~s rename to ~s", [TableName, NewTableName]),
-    {ok, RenameTbFormat};
-filter_string_format(?DB_DROP_COLUMN, QueryMap) -> %% 删除表格字段
+    {ok, RenameTbFormat}.
+
+%% 检测语句参数格式 - 删除表格字段
+filter_drop_column_format(QueryMap) -> %% 删除表格字段
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_DROP_COLUMN, QueryMap, []) of
         [] ->
@@ -60,8 +98,10 @@ filter_string_format(?DB_DROP_COLUMN, QueryMap) -> %% 删除表格字段
             DropColKeyFormat = string:join(DropCols, ","),
             DropColFormat = io_lib:format("alter table ~s ~s ", [TableName, DropColKeyFormat])
     end,
-    {ok, DropColFormat};
-filter_string_format(?DB_ADD_COLUMN, QueryMap) -> %% 添加表格字段
+    {ok, DropColFormat}.
+
+%% 检测语句参数格式 - 添加表格字段
+filter_add_column_format(QueryMap) -> %% 添加表格字段
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_ADD_COLUMN, QueryMap, []) of
         [] ->
@@ -71,8 +111,10 @@ filter_string_format(?DB_ADD_COLUMN, QueryMap) -> %% 添加表格字段
             {ok, FieldFormat} = db_parse:parse_fields(Fields, TotalFields, "add column"),
             ColFormat = io_lib:format("alter table ~s ~ts", [TableName, FieldFormat])
     end,
-    {ok, ColFormat};
-filter_string_format(?DB_MODIFY_COLUMN, QueryMap) -> %% 添加表格字段
+    {ok, ColFormat}.
+
+%% 检测语句参数格式 - 修改表格字段
+filter_modify_column_format(QueryMap) -> %% 修改表格字段
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_MODIFY_COLUMN, QueryMap, []) of
         [] ->
@@ -82,8 +124,10 @@ filter_string_format(?DB_MODIFY_COLUMN, QueryMap) -> %% 添加表格字段
             {ok, FieldFormat} = db_parse:parse_fields(Fields, TotalFields, "modify column"),
             ColFormat = io_lib:format("alter table ~s ~ts", [TableName, FieldFormat])
     end,
-    {ok, ColFormat};
-filter_string_format(?DB_ADD_MODIFY_COLUMN, QueryMap) -> %% 不存在就添加字段，存在则修改表格字段
+    {ok, ColFormat}.
+
+%% 检测语句参数格式 - 不存在就添加字段，存在则修改表格字段
+filter_add_modify_column_format(QueryMap) -> %% 不存在就添加字段，存在则修改表格字段
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_ADD_MODIFY_COLUMN, QueryMap, []) of
         [] ->
@@ -92,8 +136,10 @@ filter_string_format(?DB_ADD_MODIFY_COLUMN, QueryMap) -> %% 不存在就添加�
             TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
             {ok, Fun} = db_fun:fun_add_modify_column(TableName, Fields, TotalFields)
     end,
-    {ok, Fun};
-filter_string_format(?DB_ADD_INDEX, QueryMap) -> %% 不存在就添加字段，存在则修改表格字段
+    {ok, Fun}.
+
+%% 检测语句参数格式 - 添加索引
+filter_add_index_format(QueryMap) ->
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_ADD_INDEX, QueryMap, []) of
         [] ->
@@ -103,8 +149,10 @@ filter_string_format(?DB_ADD_INDEX, QueryMap) -> %% 不存在就添加字段，�
             {ok, KeyFormat} = db_parse:parse_field_key(Fields, TotalFields, "add"),
             IndexFormat = io_lib:format("alter table ~s ~ts", [TableName, KeyFormat])
     end,
-    {ok, IndexFormat};
-filter_string_format(?DB_DROP_INDEX, QueryMap) -> %% 不存在就添加字段，存在则修改表格字段
+    {ok, IndexFormat}.
+
+%% 检测语句参数格式 - 删除索引
+filter_drop_index_format(QueryMap) ->
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_DROP_INDEX, QueryMap, []) of
         [] ->
@@ -114,40 +162,51 @@ filter_string_format(?DB_DROP_INDEX, QueryMap) -> %% 不存在就添加字段，
             {ok, KeyFormat} = db_parse:parse_field_key(Fields, TotalFields, "drop"),
             IndexFormat = io_lib:format("alter table ~s ~ts", [TableName, KeyFormat])
     end,
-    {ok, IndexFormat};
-filter_string_format(?DB_COMMENT, QueryMap) -> %% 创建表格描述
+    {ok, IndexFormat}.
+
+%% 检测语句参数格式 - 创建表格描述
+filter_comment_format(QueryMap) -> %% 创建表格描述
     case maps:get(?DB_COMMENT, QueryMap, []) of
         [] ->
             CommentFormat = "";
         CreateComment ->
             {ok, CommentFormat} = db_parse:parse_table_comment(CreateComment)
     end,
-    {ok, CommentFormat};
-filter_string_format(?DB_SELECT_KEYS, QueryMap) -> %% 查询字段名
+    {ok, CommentFormat}.
+
+%% 检测语句参数格式 - 查询字段名
+filter_select_keys_format(QueryMap) -> %% 查询字段名
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_SELECT_KEYS, QueryMap, "*") of
         "*" ->
-            SelectFormat = io_lib:format("select * from ~s", [TableName]);
+            SelectFormat = io_lib:format("select * from ~s", [TableName]),
+            Vals = [];
         SelectValIDs ->
             TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
-            {ok, SelectKeys} = db_parse:parse_select_fields(SelectValIDs, TotalFields),
+            {ok, SelectKeys, Vals} = db_parse:parse_select_fields(SelectValIDs, TotalFields),
             SelectFormat = io_lib:format("select ~ts from ~ts", [SelectKeys, TableName])
     end,
-    {ok, SelectFormat};
-filter_string_format(?DB_INSERT_KEYS, QueryMap) -> %% 插入字段名
+    {ok, SelectFormat, Vals}.
+
+%% 检测语句参数格式 - 插入字段名
+filter_insert_keys_format(QueryMap) -> %% 插入字段名
     {ok, TableName} = get_table_name(QueryMap),
-    case maps:get(?DB_INSERT_KEYS, QueryMap, []) of
+    case maps:get(?DB_INSERT_IGNORE_KEYS, QueryMap, []) of
         [] ->
-            InsertFormat = io_lib:format("insert into ~s values", [TableName]);
+            InsertKeyIDs = maps:get(?DB_INSERT_KEYS, QueryMap, []),
+            TableExtra = "";
         InsertKeyIDs ->
-            TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
-            {ok, InsertKeys} = db_parse:parse_field_names(InsertKeyIDs, TotalFields),
-            InsertFormat = io_lib:format("insert into ~s (~s) values", [TableName, InsertKeys])
+            TableExtra = ?DB_IGNORE
     end,
-    {ok, InsertFormat};
-filter_string_format(?DB_INSERT_VALS, QueryMap) -> %% 插入字段数据
+    TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
+    {ok, InsertKeys} = db_parse:parse_field_names(InsertKeyIDs, TotalFields),
+    InsertFormat = io_lib:format("insert ~s into ~s (~s) values", [TableExtra, TableName, InsertKeys]),
+    {ok, InsertFormat}.
+
+%% 检测语句参数格式 - 插入字段数据
+filter_insert_vals_format(QueryMap) -> %% 插入字段数据
     OldInsertVals = maps:get(?DB_INSERT_VALS, QueryMap, ""),
-    case maps:get(?DB_INSERT_KEYS, QueryMap, []) of
+    case maps:get(?DB_INSERT_IGNORE_KEYS, QueryMap, maps:get(?DB_INSERT_KEYS, QueryMap, [])) of
         [] ->
             ValFormat = "",
             InsertVals = "";
@@ -161,8 +220,10 @@ filter_string_format(?DB_INSERT_VALS, QueryMap) -> %% 插入字段数据
             Count = ValsCount div KeysCount,
             {ok, ValFormat} = get_values_format(Count, KeysCount)
     end,
-    {ok, ValFormat, InsertVals};
-filter_string_format(?DB_REPLACE_KEYS, QueryMap) -> %% 替换字段名
+    {ok, ValFormat, InsertVals}.
+
+%% 检测语句参数格式 - 替换字段名
+filter_replace_keys_format(QueryMap) -> %% 替换字段名
     {ok, TableName} = get_table_name(QueryMap),
     case maps:get(?DB_REPLACE_KEYS, QueryMap, []) of
         [] ->
@@ -172,8 +233,10 @@ filter_string_format(?DB_REPLACE_KEYS, QueryMap) -> %% 替换字段名
             {ok, ReplaceKeys} = db_parse:parse_field_names(ReplaceKeyIDs, TotalFields),
             ReplaceFormat = io_lib:format("replace into ~s (~s) values ", [TableName, ReplaceKeys])
     end,
-    {ok, ReplaceFormat};
-filter_string_format(?DB_REPLACE_VALS, QueryMap) -> %% 替换字段数据
+    {ok, ReplaceFormat}.
+
+%% 检测语句参数格式 - 替换字段数据
+filter_replace_vals_format(QueryMap) -> %% 替换字段数据
     OldReplaceVals = maps:get(?DB_REPLACE_VALS, QueryMap, ""),
     case maps:get(?DB_REPLACE_KEYS, QueryMap, []) of
         [] ->
@@ -189,8 +252,10 @@ filter_string_format(?DB_REPLACE_VALS, QueryMap) -> %% 替换字段数据
             Count = ValsCount div KeysCount,
             {ok, ValFormat} = get_values_format(Count, KeysCount)
     end,
-    {ok, ValFormat, ReplaceVals};
-filter_string_format(?DB_UPDATE_SETS, QueryMap) -> %% 更新字段数据
+    {ok, ValFormat, ReplaceVals}.
+
+%% 检测语句参数格式 - 更新字段数据
+filter_update_sets_format(QueryMap) -> %% 更新字段数据
     case maps:get(?DB_UPDATE_SETS, QueryMap, []) of
         [] ->
             SetFormat = "",
@@ -201,27 +266,35 @@ filter_string_format(?DB_UPDATE_SETS, QueryMap) -> %% 更新字段数据
             {ok, KeyFormat, SetVals} = db_parse:parse_fields_kvs(SetKVs, TotalFields),
             SetFormat = io_lib:format("update ~s set ~s ", [TableName, KeyFormat])
     end,
-    {ok, SetFormat, SetVals};
-filter_string_format(?DB_DELETE, QueryMap) -> %% 删除字段数据
+    {ok, SetFormat, SetVals}.
+
+%% 检测语句参数格式 - 删除字段数据
+filter_delete_data_format(QueryMap) -> %% 删除字段数据
     {ok, TableName} = get_table_name(QueryMap),
     DeleteFormat = io_lib:format("delete from ~s ", [TableName]),
-    {ok, DeleteFormat};
-filter_string_format(?DB_TRUNCATE, QueryMap) -> %% 清空表数据
+    {ok, DeleteFormat}.
+
+%% 检测语句参数格式 - 清空表数据
+filter_truncate_table_format(QueryMap) -> %% 清空表数据
     {ok, TableName} = get_table_name(QueryMap),
     DeleteFormat = io_lib:format("truncate ~s ", [TableName]),
-    {ok, DeleteFormat};
-filter_string_format(?DB_WHERE, QueryMap) -> %% 条件匹配
+    {ok, DeleteFormat}.
+
+%% 检测语句参数格式 - 条件匹配
+filter_where_format(QueryMap) -> %% 条件匹配
     case maps:get(?DB_WHERE, QueryMap, []) of
         [] ->
             WhereFormat = "",
             WhereVals = "";
         WhereKVs ->
             TotalFields = maps:get(?DB_TABLE_FIELDS, QueryMap, []),
-            {ok, KeyFormat, WhereVals} = db_parse:parse_where(WhereKVs, TotalFields),
+            {ok, KeyFormat, WhereVals} = db_parse:parse_condition(WhereKVs, TotalFields),
             WhereFormat = io_lib:format("where ~s", [KeyFormat])
     end,
-    {ok, WhereFormat, WhereVals};
-filter_string_format(?DB_GROUP_BY, QueryMap) -> %% 查询分组
+    {ok, WhereFormat, WhereVals}.
+
+%% 检测语句参数格式 - 查询分组
+filter_group_by_format(QueryMap) -> %% 查询分组
     case maps:get(?DB_GROUP_BY, QueryMap, []) of
         [] ->
             GroupByFormat = "";
@@ -230,8 +303,10 @@ filter_string_format(?DB_GROUP_BY, QueryMap) -> %% 查询分组
             {ok, GroupByVals} = db_parse:parse_field_names(GroupByIDs, TotalFields),
             GroupByFormat = io_lib:format("group by ~s", [GroupByVals])
     end,
-    {ok, GroupByFormat};
-filter_string_format(?DB_ORDER_BY, QueryMap) -> %% 查询排序
+    {ok, GroupByFormat}.
+
+%% 检测语句参数格式 - 查询排序
+filter_order_by_format(QueryMap) -> %% 查询排序
     case maps:get(?DB_ORDER_BY, QueryMap, []) of
         [] ->
             OrderByFormat = "";
@@ -246,8 +321,10 @@ filter_string_format(?DB_ORDER_BY, QueryMap) -> %% 查询排序
             OrderVals1 = string:join(OrderVals, ","),
             OrderByFormat = io_lib:format("order by ~s", [OrderVals1])
     end,
-    {ok, OrderByFormat};
-filter_string_format(?DB_LIMIT, QueryMap) -> %% 查询排序
+    {ok, OrderByFormat}.
+
+%% 检测语句参数格式 - 查询限制数量
+filter_limit_format(QueryMap) -> %% 查询排序
     case maps:get(?DB_LIMIT, QueryMap, all) of
         all ->
             LimitFormat = "";
