@@ -66,7 +66,7 @@ parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVa
 parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVals) ->
     FieldsFormat = OldFieldsFormat ++ [io_lib:format(KFormat, [K])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
-parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) ->
+parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) orelse is_atom(FieldID) ->
     {ok, Fields} = db_util:get_fields([FieldID], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
@@ -308,9 +308,6 @@ parse_if_null({?DB_IF_NULL, Cond, Default}, TotalFields) ->
         _ ->
             DefaultFormat = "?", DefaultVals = [Default]
     end,
-    io:format("Cond:~p~n", [Cond]),
-    io:format("CondFormat:~p~n", [CondFormat]),
-    io:format("CondVals:~p~n", [CondVals]),
     RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, DefaultFormat], ",")]),
     {ok, RFormat, CondVals ++ DefaultVals}.
 
