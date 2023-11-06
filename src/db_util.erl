@@ -28,10 +28,15 @@
     truncate_string/1            %% 清空表数据语句 orm
 ]).
 -export([
+    version/0,                   %% 获取orm版本号
     get_fields/2                 %% 获取字段名
 ]).
 
 -include("db.hrl").
+
+%% 获取orm版本号
+version() ->
+    {ok, ?DB_VERSION}.
 
 %% 获取表名列表语句 orm
 show_table_string(QueryMap) ->
