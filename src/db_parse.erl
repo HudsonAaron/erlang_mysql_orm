@@ -242,6 +242,12 @@ parse_condition_1([{WKey, WType, WTFormat, WVal} | Tail], TotalFields, WhereForm
     {ok, WFormat} = parse_regexp({WKey, WType, WTFormat, WVal}, TotalFields),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
+parse_condition_1([{WType, WTFormat, WKey} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_SUM -> %% 求和
+    {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
+    PreWFormat = lists:concat([WType, WTFormat]),
+    WFormat = io_lib:format(PreWFormat, [Field]),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
 parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) -> %% 其他情况
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
     WFormat = io_lib:format("`~s` ~s ?", [Field, WType]),
@@ -302,14 +308,8 @@ parse_if_null({?DB_IF_NULL, Cond, Default}, TotalFields) ->
         _ ->
             {ok, CondFormat, CondVals} = parse_select_fields([Cond], TotalFields)
     end,
-    case is_tuple(Default) of
-        true ->
-            {ok, DefaultFormat, DefaultVals} = parse_condition([Default], TotalFields);
-        _ ->
-            DefaultFormat = "?", DefaultVals = [Default]
-    end,
-    RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, DefaultFormat], ",")]),
-    {ok, RFormat, CondVals ++ DefaultVals}.
+    RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, erlang:integer_to_list(Default)], ",")]),
+    {ok, RFormat, CondVals}.
 
 %% 正则表达式
 parse_regexp({Key, ?DB_REGEXP, Format, Val}, TotalFields) ->

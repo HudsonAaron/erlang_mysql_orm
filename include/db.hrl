@@ -28,7 +28,8 @@
 -define(DB_AS(K, V),                 {K, ?DB_AS, V}).                    %% 别名
 
 -define(DB_AVG(K),                   {"avg(`~s`)", K}).                  %% 平均值
--define(DB_SUM(K),                   {"sum(`~s`)", K}).                  %% 统计K之和
+-define(DB_SUM,                      "sum").                             %% 统计K之和
+-define(DB_SUM(K),                   {?DB_SUM, "(`~s`)", K}).            %% 统计K之和
 
 -define(DB_COUNT_ALL,                {"count(~s)", "*"}).                %% 统计K行数量
 -define(DB_COUNT(K),                 {"count(`~s`)", K}).                %% 统计K行数量

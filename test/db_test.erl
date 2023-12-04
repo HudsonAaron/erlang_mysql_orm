@@ -82,7 +82,7 @@ b4() ->
     SelectMap = #{
         ?DB_TABLE_FIELDS => [id, name, age, score],
         ?DB_TABLE_NAME => aaa,
-        ?DB_SELECT_KEYS => [?DB_IF_NULL_SUM(id, 0), ?DB_MAX(name)],
+        ?DB_SELECT_KEYS => [?DB_IF_NULL_SUM(id), ?DB_MAX(name)],
         ?DB_LIMIT => 1
     },
     {ok, A, B} = db_util:select_string(SelectMap),
