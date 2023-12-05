@@ -151,6 +151,10 @@ truncate_string(QueryMap) ->
 get_fields(FieldIDs, FieldNames) ->
     Fun =
         fun
+            ({?DB_NUM, Num}) when is_float(Num) ->
+                erlang:float_to_list(Num); %% 保留为数值
+            ({?DB_NUM, Num}) when is_integer(Num) ->
+                erlang:integer_to_list(Num); %% 保留为数值
             (FieldID) when is_integer(FieldID) ->
                 erlang:atom_to_list(lists:nth(FieldID - 1, FieldNames));
             (FieldID) when is_atom(FieldID) ->

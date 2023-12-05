@@ -3,6 +3,18 @@
 这个工具，意在希望降低mysql开发难度
 
 ###（1）版本新增内容
++ `2023-12-05`
+    - (a) `add`
+    - (b) `minus`
+    - (c) `multiply`
+    - (d) `divide`
+    - (e) `div`
+    - (f) `mod`
+    - (g) `round`
+    - (h) `ceil`
+    - (i) `floor`
+    - (j) `truncate`
+    - (k) `num` 保持数值
 + `2023-12-04`
     - (a) 修复`DB_SUM`使用#aaa.id时报错
 + `2023-11-06`

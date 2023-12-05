@@ -214,6 +214,24 @@ b11() -> %% 子查询
     error_logger:error_info(R),
     ok.
 
+b12() -> %% 查询带计算公式
+    Map = #{
+        ?DB_TABLE_FIELDS => ?DB_FIELDS(aa),
+        ?DB_TABLE_NAME => aa,
+        ?DB_SELECT_KEYS => [
+            ?DB_ROUND(?DB_NUM(10.01)),
+            ?DB_ROUND(?DB_NUM(111.11), ?DB_NUM(-1)),
+            ?DB_CEIL(#aaa.score),
+            ?DB_TRUNCATE(#aaa.age, ?DB_NUM(1))
+        ],
+        ?DB_LIMIT => 1
+    },
+    {ok, A, B} = db_util:select_string(Map),
+    error_logger:error_info({A, B}),
+    R = api_db:execute(A, B),
+    error_logger:error_info(R),
+    ok.
+
 e1() ->
     Map = #{
         ?DB_TABLE_FIELDS => ?DB_FIELDS(aaa),

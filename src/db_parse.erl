@@ -53,6 +53,33 @@ parse_select_fields_1([{?DB_IF_NULL, Cond, Default} | Tail], TotalFields, OldFie
     {ok, KFormat, Vals} = parse_if_null({?DB_IF_NULL, Cond, Default}, TotalFields),
     FieldsFormat = OldFieldsFormat ++ [KFormat],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals ++ Vals);
+parse_select_fields_1([{?DB_SUM, Cond, Default} | Tail], TotalFields, OldFieldsFormat, SelVals) -> %% sum条件判断
+    {ok, KFormat} = parse_sum({?DB_SUM, Cond, Default}, TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [KFormat],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{AKey, Operator, BKey} | Tail], TotalFields, OldFieldsFormat, SelVals)
+    when Operator == ?DB_ADD orelse
+    Operator == ?DB_MINUS orelse
+    Operator == ?DB_MULTIPLY orelse
+    Operator == ?DB_DIVIDE -> %% 运算符
+    {ok, KFormat} = parse_operator({AKey, Operator, BKey}, TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [KFormat],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{Calc, Format, Key} | Tail], TotalFields, OldFieldsFormat, SelVals)
+    when Calc == ?DB_ROUND orelse
+    Calc == ?DB_CEIL orelse
+    Calc == ?DB_FLOOR orelse
+    Calc == ?DB_DIV orelse
+    Calc == ?DB_MOD -> %% 运算符
+    {ok, KFormat} = parse_calc({Calc, Format, Key}, TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [KFormat],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{Calc, Format, Key, N} | Tail], TotalFields, OldFieldsFormat, SelVals)
+    when Calc == ?DB_ROUND orelse
+    Calc == ?DB_TRUNCATE -> %% 运算符
+    {ok, KFormat} = parse_calc({Calc, Format, Key, N}, TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [KFormat],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
 parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(K) ->
     {ok, Fields} = db_util:get_fields([K], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format(KFormat, [Fields])],
@@ -243,9 +270,29 @@ parse_condition_1([{WKey, WType, WTFormat, WVal} | Tail], TotalFields, WhereForm
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
 parse_condition_1([{WType, WTFormat, WKey} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_SUM -> %% 求和
-    {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
-    PreWFormat = lists:concat([WType, WTFormat]),
-    WFormat = io_lib:format(PreWFormat, [Field]),
+    {ok, WFormat} = parse_sum({WType, WTFormat, WKey}, TotalFields),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
+parse_condition_1([{AKey, WType, BKey} | Tail], TotalFields, WhereFormats, WhereVals)
+    when WType == ?DB_ADD orelse
+    WType == ?DB_MINUS orelse
+    WType == ?DB_MULTIPLY orelse
+    WType == ?DB_DIVIDE -> %% 运算符
+    {ok, WFormat} = parse_operator({AKey, WType, BKey}, TotalFields),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
+parse_condition_1([{WType, WFormat, Key} | Tail], TotalFields, WhereFormats, WhereVals)
+    when WType == ?DB_ROUND orelse
+    WType == ?DB_CEIL orelse
+    WType == ?DB_FLOOR orelse
+    WType == ?DB_DIV orelse
+    WType == ?DB_MOD -> %% 运算符
+    {ok, WFormat} = parse_calc({WType, WFormat, Key}, TotalFields),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+parse_condition_1([{WType, WFormat, Key, N} | Tail], TotalFields, WhereFormats, WhereVals)
+    when WType == ?DB_ROUND orelse
+    WType == ?DB_TRUNCATE -> %% 运算符
+    {ok, WFormat} = parse_calc({WType, WFormat, Key, N}, TotalFields),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
 parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) -> %% 其他情况
@@ -311,6 +358,13 @@ parse_if_null({?DB_IF_NULL, Cond, Default}, TotalFields) ->
     RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, erlang:integer_to_list(Default)], ",")]),
     {ok, RFormat, CondVals}.
 
+%% sum条件判断
+parse_sum({?DB_SUM, Format, Key}, TotalFields) ->
+    {ok, [Field]} = db_util:get_fields([Key], TotalFields),
+    PreWFormat = lists:concat([?DB_SUM, Format]),
+    WFormat = io_lib:format(PreWFormat, [Field]),
+    {ok, WFormat}.
+
 %% 正则表达式
 parse_regexp({Key, ?DB_REGEXP, Format, Val}, TotalFields) ->
     {ok, [Field]} = db_util:get_fields([Key], TotalFields),
@@ -323,3 +377,34 @@ parse_sub_query({WKey, WType, #{} = WVal}, TotalFields) -> %% 子查询
     {ok, WVFormat, WVal2} = db_util:select_string(WVal),
     RFormat = io_lib:format("`~s` ~s (~ts)", [Field, WType, WVFormat]),
     {ok, RFormat, WVal2}.
+
+%% 运算符
+parse_operator({Operator, AKey, BKey}, TotalFields)
+    when Operator == ?DB_ADD orelse
+    Operator == ?DB_MINUS orelse
+    Operator == ?DB_MULTIPLY orelse
+    Operator == ?DB_DIVIDE ->
+    {ok, [AField]} = db_util:get_fields([AKey], TotalFields),
+    {ok, [BField]} = db_util:get_fields([BKey], TotalFields),
+    WFormat = io_lib:format("~s ~s ~s", [AField, Operator, BField]),
+    {ok, WFormat}.
+
+%% 运算符
+parse_calc({Calc, Format, Key}, TotalFields)
+    when Calc == ?DB_ROUND orelse
+    Calc == ?DB_CEIL orelse
+    Calc == ?DB_FLOOR orelse
+    Calc == ?DB_DIV orelse
+    Calc == ?DB_MOD ->
+    {ok, [Field]} = db_util:get_fields([Key], TotalFields),
+    PreFormat = lists:concat([Calc, Format]),
+    WFormat = io_lib:format(PreFormat, [Field]),
+    {ok, WFormat};
+parse_calc({Calc, Format, Key, N}, TotalFields)
+    when Calc == ?DB_ROUND orelse
+    Calc == ?DB_TRUNCATE ->
+    {ok, [KField]} = db_util:get_fields([Key], TotalFields),
+    {ok, [NField]} = db_util:get_fields([N], TotalFields),
+    PreFormat = lists:concat([Calc, Format]),
+    WFormat = io_lib:format(PreFormat, [KField, NField]),
+    {ok, WFormat}.

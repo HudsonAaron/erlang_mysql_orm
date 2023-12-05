@@ -9,7 +9,7 @@
 -author("zhuhaolin").
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
--define(DB_VERSION, "v1.1"). %% 版本 2023-11-06
+-define(DB_VERSION, "v1.3"). %% 版本 2023-12-05
 
 -define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门
@@ -27,9 +27,35 @@
 -define(DB_AS,                       "as").                              %% 别名
 -define(DB_AS(K, V),                 {K, ?DB_AS, V}).                    %% 别名
 
+-define(DB_NUM,                      "num").                             %% 特殊标识 数值
+-define(DB_NUM(A),                   {?DB_NUM, A}).                      %% 特殊标识 数值（加上这标识，则会保留为数值）
+
+-define(DB_ADD,                      "+").                               %% 加法
+-define(DB_ADD(A, B),                {A, ?DB_ADD, B}).                   %% 加法
+-define(DB_MINUS,                    "-").                               %% 减法
+-define(DB_MINUS(A, B),              {A, ?DB_MINUS, B}).                 %% 减法
+-define(DB_MULTIPLY,                 "*").                               %% 乘法
+-define(DB_MULTIPLY(A, B),           {A, ?DB_MULTIPLY, B}).              %% 乘法
+-define(DB_DIVIDE,                   "/").                               %% 除法
+-define(DB_DIVIDE(A, B),             {A, ?DB_DIVIDE, B}).                %% 除法
+-define(DB_ROUND,                    "round").                           %% 四舍五入
+-define(DB_ROUND(A),                 {?DB_ROUND, "(~s)", A}).            %% 四舍五入
+-define(DB_ROUND(A, N),              {?DB_ROUND, "(~s, ~s)", A, N}).     %% 四舍五入，保留N位数
+-define(DB_CEIL,                     "ceil").                            %% 向上取整
+-define(DB_CEIL(A),                  {?DB_CEIL, "(~s)", A}).             %% 向上取整
+-define(DB_FLOOR,                    "floor").                           %% 向下取整
+-define(DB_FLOOR(A),                 {?DB_FLOOR, "(~s)", A}).            %% 向下取整
+-define(DB_DIV,                      "div").                             %% 整除
+-define(DB_DIV(A),                   {?DB_DIV, "(~s)", A}).              %% 整除
+-define(DB_MOD,                      "mod").                             %% 取余
+-define(DB_MOD(A),                   {?DB_MOD, "(~s)", A}).              %% 取余
+-define(DB_TRUNCATE,                 "truncate").                        %% 截取
+-define(DB_TRUNCATE(A, N),           {?DB_TRUNCATE, "(~s, ~s)", A, N}).  %% 截取
+
 -define(DB_AVG(K),                   {"avg(`~s`)", K}).                  %% 平均值
 -define(DB_SUM,                      "sum").                             %% 统计K之和
--define(DB_SUM(K),                   {?DB_SUM, "(`~s`)", K}).            %% 统计K之和
+-define(DB_SUM(K),                   {?DB_SUM, "(~s)", K}).              %% 统计K之和
+-define(DB_SUM_FIELD(K),             {?DB_SUM, "(`~s`)", K}).            %% 统计K之和 - 单字段
 
 -define(DB_COUNT_ALL,                {"count(~s)", "*"}).                %% 统计K行数量
 -define(DB_COUNT(K),                 {"count(`~s`)", K}).                %% 统计K行数量
@@ -122,7 +148,7 @@
 -define(DB_REPLACE_VALS,                        replace_vals).           %% 替换字段数据
 -define(DB_UPDATE_SETS,                         update_sets).            %% 更新字段数据
 -define(DB_DELETE,                              delete).                 %% 删除字段数据
--define(DB_TRUNCATE,                            truncate).               %% 清空表数据
+-define(DB_TRUNCATE_TABLE,                      truncate_table).         %% 清空表数据
 -define(DB_WHERE,                               where).                  %% 匹配条件
 -define(DB_GROUP_BY,                            group_by).               %% 分组
 -define(DB_ORDER_BY,                            order_by).               %% 排序
