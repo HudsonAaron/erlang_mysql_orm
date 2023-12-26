@@ -295,6 +295,11 @@ parse_condition_1([{WType, WFormat, Key, N} | Tail], TotalFields, WhereFormats, 
     {ok, WFormat} = parse_calc({WType, WFormat, Key, N}, TotalFields),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
+parse_condition_1([{WKey, WType, null} | Tail], TotalFields, WhereFormats, WhereVals) -> %% null值判断
+    {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
+    WFormat = io_lib:format("`~s` ~s null", [Field, WType]),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
 parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) -> %% 其他情况
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
     WFormat = io_lib:format("`~s` ~s ?", [Field, WType]),

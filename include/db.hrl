@@ -9,7 +9,7 @@
 -author("zhuhaolin").
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
--define(DB_VERSION, "v1.3"). %% 版本 2023-12-05
+-define(DB_VERSION, "v1.4"). %% 版本 2023-12-26
 
 -define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门
@@ -90,7 +90,7 @@
 -define(DB_GT(K, V),          {K, ">", V}).                              %% 大于
 -define(DB_GE(K, V),          {K, ">=", V}).                             %% 大于等于
 -define(DB_IS(K, V),          {K, "is", V}).                             %% 是
--define(DB_NIS(K, V),         {K, ?DB_NOT ++ " " ++ "is", V}).           %% 不是
+-define(DB_NIS(K, V),         {K, "is" ++ " " ++ ?DB_NOT, V}).           %% 不是
 
 -define(DB_DESC(V),           {"desc", V}).                              %% 降序
 -define(DB_ASC(V),            {"asc", V}).                               %% 升序
