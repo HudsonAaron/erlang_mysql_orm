@@ -68,7 +68,9 @@
 
 -define(DB_MAX(K),                   {"max(`~s`)", K}).                  %% 字段K的最大值
 -define(DB_MIN(K),                   {"min(`~s`)", K}).                  %% 字段K的最小值
--define(DB_FROM_UNIXTIME(K),         {"from_unixtime(`~s`)", K}).        %% unixtime转date
+-define(DB_FROM_UNIXTIME,            "from_unixtime").                   %% unixtime转date
+-define(DB_FROM_UNIXTIME(K),         {?DB_FROM_UNIXTIME, K}).            %% unixtime转date
+-define(DB_FROM_UNIXTIME(K, F),      {?DB_FROM_UNIXTIME, K, F}).         %% unixtime转date
 -define(DB_LIKE,                     "like").                            %% 模糊匹配
 -define(DB_LIKE_ALL(Match),          {?DB_LIKE, "'~ts'", Match}).        %% 模糊匹配 - 全部
 -define(DB_LIKE_ALL(K, Match),       {K, ?DB_LIKE, "'~ts'", Match}).     %% 模糊匹配 - 全部

@@ -80,6 +80,22 @@ parse_select_fields_1([{Calc, Format, Key, N} | Tail], TotalFields, OldFieldsFor
     {ok, KFormat} = parse_calc({Calc, Format, Key, N}, TotalFields),
     FieldsFormat = OldFieldsFormat ++ [KFormat],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{?DB_FROM_UNIXTIME, K} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(K) -> %% 时间戳转换date
+    {ok, Fields} = db_util:get_fields([K], TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [io_lib:format("~s(~s)", [?DB_FROM_UNIXTIME, Fields])],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{?DB_FROM_UNIXTIME, K} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_tuple(K) -> %% 时间戳转换date
+    {ok, KFormat, Vals} = parse_select_fields_1([K], TotalFields, [], []),
+    FieldsFormat = OldFieldsFormat ++ [io_lib:format("~s(~s)", [?DB_FROM_UNIXTIME, KFormat])],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals ++ Vals);
+parse_select_fields_1([{?DB_FROM_UNIXTIME, K, DateFormat} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(K) -> %% 时间戳转换date
+    {ok, Fields} = db_util:get_fields([K], TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [io_lib:format("~s(~s, ~ts)", [?DB_FROM_UNIXTIME, Fields, DateFormat])],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([{?DB_FROM_UNIXTIME, K, DateFormat} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_tuple(K) -> %% 时间戳转换date
+    {ok, KFormat, Vals} = parse_select_fields_1([K], TotalFields, [], []),
+    FieldsFormat = OldFieldsFormat ++ [io_lib:format("~s(~s, ~ts)", [?DB_FROM_UNIXTIME, KFormat, DateFormat])],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals ++ Vals);
 parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(K) ->
     {ok, Fields} = db_util:get_fields([K], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format(KFormat, [Fields])],
@@ -384,7 +400,7 @@ parse_sub_query({WKey, WType, #{} = WVal}, TotalFields) -> %% 子查询
     {ok, RFormat, WVal2}.
 
 %% 运算符
-parse_operator({Operator, AKey, BKey}, TotalFields)
+parse_operator({AKey, Operator, BKey}, TotalFields)
     when Operator == ?DB_ADD orelse
     Operator == ?DB_MINUS orelse
     Operator == ?DB_MULTIPLY orelse
