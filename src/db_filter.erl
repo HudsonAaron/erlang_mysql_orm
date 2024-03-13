@@ -21,6 +21,7 @@
     filter_add_index_format/1,                         %% 检测语句参数格式 - 添加索引
     filter_drop_index_format/1,                        %% 检测语句参数格式 - 删除索引
     filter_comment_format/1,                           %% 检测语句参数格式 - 创建表格描述
+    filter_charset_collate_format/1,                   %% 检测语句参数格式 - 创建表格编码格式、校准
     filter_select_keys_format/1,                       %% 检测语句参数格式 - 查询字段名
     filter_insert_keys_format/1,                       %% 检测语句参数格式 - 插入字段名
     filter_insert_vals_format/1,                       %% 检测语句参数格式 - 插入字段数据
@@ -173,6 +174,16 @@ filter_comment_format(QueryMap) -> %% 创建表格描述
             {ok, CommentFormat} = db_parse:parse_table_comment(CreateComment)
     end,
     {ok, CommentFormat}.
+
+%% 检测语句参数格式 - 创建表格编码格式、校准
+filter_charset_collate_format(QueryMap) -> %% 创建表格描述
+    case maps:get(?DB_CHARSET, QueryMap, []) of
+        [] ->
+            CharsetFormat = "";
+        CreateComment ->
+            {ok, CharsetFormat} = db_parse:parse_table_charset(CreateComment)
+    end,
+    {ok, CharsetFormat}.
 
 %% 检测语句参数格式 - 查询字段名
 filter_select_keys_format(QueryMap) -> %% 查询字段名

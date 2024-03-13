@@ -47,7 +47,8 @@ show_table_string(QueryMap) ->
 create_string(QueryMap) ->
     {ok, CreateFormat} = db_filter:filter_create_keys_format(QueryMap),
     {ok, CreateComment} = db_filter:filter_comment_format(QueryMap),
-    SQLFormat = io_lib:format("~ts ~ts;", [CreateFormat, CreateComment]),
+    {ok, CharsetFormat} = db_filter:filter_charset_collate_format(QueryMap),
+    SQLFormat = io_lib:format("~ts ~ts ~ts;", [CreateFormat, CreateComment, CharsetFormat]),
     {ok, unicode:characters_to_binary(SQLFormat, utf8)}.
 
 %% 删除表格语句 orm

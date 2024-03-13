@@ -16,6 +16,7 @@
     parse_field_key/2,
     parse_field_key/3,
     parse_table_comment/1,
+    parse_table_charset/1,
     parse_select_fields/2,
     parse_fields_kvs/2,
     parse_condition/2,
@@ -164,9 +165,14 @@ parse_fields_2(
 
 %% 转化表格描述
 parse_table_comment("") ->
-    {ok, "ENGINE = InnoDB CHARSET = utf8"};
+    {ok, "ENGINE = InnoDB"};
 parse_table_comment(Comment) ->
-    {ok, io_lib:format("ENGINE = InnoDB CHARSET = utf8 comment = '~ts'", [Comment])}.
+    {ok, io_lib:format("ENGINE = InnoDB comment = '~ts'", [Comment])}.
+%% 转化表格编码格式与校准
+parse_table_charset({Charset, Collate}) ->
+    {ok, io_lib:format("charset = '~ts' collate = '~ts'", [Charset, Collate])};
+parse_table_charset(_) ->
+    {ok, "charset = utf8"}.
 %% 转化字段描述
 parse_field_comment("") ->
     {ok, ""};

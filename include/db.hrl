@@ -9,7 +9,7 @@
 -author("zhuhaolin").
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
--define(DB_VERSION, "v1.4"). %% 版本 2023-12-26
+-define(DB_VERSION, "v1.5"). %% 版本 2024-03-13
 
 -define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门
@@ -108,8 +108,12 @@
 
 -define(DB_UNSIGNED,          "unsigned").                               %% 无符号 - 非负整型
 -define(DB_COMMENT,           "comment").                                %% 描述
+-define(DB_CHARSET,           "charset").                                %% 编码格式
 -define(DB_AFTER,             "after").                                  %% 在~字段之后
 -define(DB_IGNORE,            "ignore").                                 %% 忽略
+
+-define(DB_CHARSET_COLLATE_UTF8MB3, {"utf8mb3", "utf8mb3_general_ci"}).  %% 编码格式，校准方式
+-define(DB_CHARSET_COLLATE_UTF8MB4, {"utf8mb4", "utf8mb4_general_ci"}).  %% 编码格式，校准方式
 
 -define(DB_TINYINT,           "tinyint").                                %% 数据类型 - mini整型 (-128~127)
 -define(DB_TINYINT(Num),      io_lib:format("tinyint(~w)", [Num])).      %% 数据类型 - mini整型 (-128~127)
