@@ -9,7 +9,7 @@
 -author("zhuhaolin").
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
--define(DB_VERSION, "v1.5"). %% 版本 2024-03-13
+-define(DB_VERSION, "v1.5.3"). %% 版本 2024-06-20
 
 -define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门
@@ -21,7 +21,7 @@
 %% 标识符
 -define(DB_IN,                       "in").                              %% 在~之中
 -define(DB_IN(K, V),                 {K, ?DB_IN, V}).                    %% 在~之中
--define(DB_NIN,                      ?DB_NOT ++ " " ++ "in").            %% 不在~之中
+-define(DB_NIN,                      "not in").                          %% 不在~之中
 -define(DB_NIN(K, V),                {K, ?DB_NIN, V}).                   %% 不在~之中
 
 -define(DB_AS,                       "as").                              %% 别名
@@ -80,6 +80,10 @@
 -define(DB_LIKE_PREFIX(K, Match),    {K, ?DB_LIKE, "'~ts%'", Match}).    %% 模糊匹配 - 前缀
 -define(DB_LIKE_SUFFIX(Match),       {?DB_LIKE, "'%~ts'", Match}).       %% 模糊匹配 - 后缀
 -define(DB_LIKE_SUFFIX(K, Match),    {K, ?DB_LIKE, "'%~ts'", Match}).    %% 模糊匹配 - 后缀
+
+-define(DB_JSON_LENGTH,              "json_length").
+-define(DB_JSON_LENGTH(K, F),        {?DB_JSON_LENGTH, "(~s)", K}).             %% 计算json字段是否为空
+
 -define(DB_REGEXP,                   "regexp").                          %% 正则表达式
 -define(DB_REGEXP(K, Match),         {K, ?DB_REGEXP, "'~ts'", Match}).   %% 正则表达式 [0-9] [a-z] [a-Z] [0-9a-zA-Z]
 %% SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name regexp 'card_[0-9]';
@@ -181,7 +185,16 @@
         end
     end).
 -endif.
+
+%% 字段列表
 -ifndef(DB_ORM_FIELDS).
 -define(DB_ORM_FIELDS, true).
 -define(DB_FIELDS(RecordName), record_info(fields, RecordName)).
+-endif.
+
+%% 字段名
+-ifndef(DB_ORM_FIELD).
+-define(DB_ORM_FIELD, true).
+-define(DB_FIELD, "field").
+-define(DB_FIELD(Index), {"field", Index}).
 -endif.

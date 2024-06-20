@@ -110,7 +110,7 @@ parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVa
 parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVals) ->
     FieldsFormat = OldFieldsFormat ++ [io_lib:format(KFormat, [K])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
-parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) orelse is_atom(FieldID) ->
+parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) orelse is_atom(FieldID) orelse is_list(FieldID) ->
     {ok, Fields} = db_util:get_fields([FieldID], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
@@ -254,6 +254,11 @@ parse_condition(WhereKVs, TotalFields) ->
 parse_condition_1([], _TotalFields, WhereFormats, WhereVals) ->
     {ok, string:join(WhereFormats, " "), WhereVals};
 
+parse_condition_1([{WType, K2} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_FIELD -> %% field
+    {ok, [KField]} = db_util:get_fields([K2], TotalFields),
+    WFormat = io_lib:format("`~s`", [KField]),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
 parse_condition_1([{K, WType, K2} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_AS andalso is_tuple(K) -> %% 别名
     {ok, KFormat, Vals} = parse_select_fields_1([K], TotalFields, [], []),
     WFormat = io_lib:format("~ts ~s '~ts'", [KFormat, ?DB_AS, K2]),
@@ -276,9 +281,9 @@ parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, Where
     {ok, WFormat, WVal2} = parse_sub_query({WKey, WType, WVal}, TotalFields),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ WVal2);
 
-parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_IN andalso is_list(WVal) -> %% 范围匹配
-    {ok, WFormat} = parse_in({WKey, WType, WVal}, TotalFields),
-    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ WVal);
+parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when (WType == ?DB_IN orelse WType == ?DB_NIN) andalso is_list(WVal) -> %% 范围匹配
+    {ok, WFormat, ValList} = parse_in({WKey, WType, WVal}, TotalFields),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ ValList);
 
 parse_condition_1([{WType, WTFormat, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_LIKE -> %% 模糊匹配
     {ok, WFormat} = parse_like({WType, WTFormat, WVal}, TotalFields),
@@ -293,6 +298,10 @@ parse_condition_1([{WKey, WType, WTFormat, WVal} | Tail], TotalFields, WhereForm
 
 parse_condition_1([{WType, WTFormat, WKey} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_SUM -> %% 求和
     {ok, WFormat} = parse_sum({WType, WTFormat, WKey}, TotalFields),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
+
+parse_condition_1([{WType, WTFormat, WKey} | Tail], TotalFields, WhereFormats, WhereVals) when WType == ?DB_JSON_LENGTH -> %% 计算json字段是否为空
+    {ok, WFormat} = parse_json_length({WType, WTFormat, WKey}, TotalFields),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
 parse_condition_1([{AKey, WType, BKey} | Tail], TotalFields, WhereFormats, WhereVals)
@@ -322,16 +331,31 @@ parse_condition_1([{WKey, WType, null} | Tail], TotalFields, WhereFormats, Where
     WFormat = io_lib:format("`~s` ~s null", [Field, WType]),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals);
 
+parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) when is_tuple(WVal) -> %% 其他情况
+    {ok, [KField]} = db_util:get_fields([WKey], TotalFields),
+    {ok, KF2, V2} = parse_condition([WVal], TotalFields),
+    WFormat = io_lib:format("`~s` ~s ~s", [KField, WType, KF2]),
+    parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ V2);
+
 parse_condition_1([{WKey, WType, WVal} | Tail], TotalFields, WhereFormats, WhereVals) -> %% 其他情况
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
     WFormat = io_lib:format("`~s` ~s ?", [Field, WType]),
     parse_condition_1(Tail, TotalFields, WhereFormats ++ [WFormat], WhereVals ++ [WVal]).
 
 %% 范围匹配
-parse_in({WKey, ?DB_IN, WVal}, TotalFields) -> %% 范围匹配
+parse_in({WKey, WType, WVal}, TotalFields) -> %% 范围匹配
     {ok, [Field]} = db_util:get_fields([WKey], TotalFields),
-    RFormat = io_lib:format("`~s` ~s (~s)", [Field, ?DB_IN, string:join(lists:duplicate(length(WVal), "?"), ",")]),
-    {ok, RFormat}.
+    {ok, FormatList, ValList} = parse_in_1(WVal, TotalFields, [], []),
+    RFormat = io_lib:format("`~s` ~s (~s)", [Field, WType, FormatList]),
+    {ok, RFormat, ValList}.
+
+parse_in_1([], _TotalFields, FormatList, ValList) ->
+    {ok, string:join(FormatList, ","), ValList};
+parse_in_1([Val | Tail], TotalFields, FormatList, ValList) when is_tuple(Val) ->
+    {ok, KFormat, Vals} = parse_condition([Val], TotalFields),
+    parse_in_1(Tail, TotalFields, FormatList ++ [KFormat], ValList ++ Vals);
+parse_in_1([Val | Tail], TotalFields, FormatList, ValList) ->
+    parse_in_1(Tail, TotalFields, FormatList ++ ["?"], ValList ++ [Val]).
 
 %% 模糊匹配
 parse_like([], _TotalFields, Format) ->
@@ -382,8 +406,14 @@ parse_if_null({?DB_IF_NULL, Cond, Default}, TotalFields) ->
         _ ->
             {ok, CondFormat, CondVals} = parse_select_fields([Cond], TotalFields)
     end,
-    RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, erlang:integer_to_list(Default)], ",")]),
-    {ok, RFormat, CondVals}.
+    case is_tuple(Default) of
+        true ->
+            {ok, DefaultFormat, DefaultVals} = parse_condition([Default], TotalFields);
+        _ ->
+            {ok, DefaultFormat, DefaultVals} = parse_select_fields([Default], TotalFields)
+    end,
+    RFormat = io_lib:format("~s(~ts)", [?DB_IF_NULL, string:join([CondFormat, DefaultFormat], ",")]),
+    {ok, RFormat, CondVals ++ DefaultVals}.
 
 %% sum条件判断
 parse_sum({?DB_SUM, Format, Key}, TotalFields) ->
@@ -434,4 +464,11 @@ parse_calc({Calc, Format, Key, N}, TotalFields)
     {ok, [NField]} = db_util:get_fields([N], TotalFields),
     PreFormat = lists:concat([Calc, Format]),
     WFormat = io_lib:format(PreFormat, [KField, NField]),
+    {ok, WFormat}.
+
+%% JSON条件判断
+parse_json_length({?DB_JSON_LENGTH, Format, Key}, TotalFields) ->
+    {ok, [Field]} = db_util:get_fields([Key], TotalFields),
+    PreWFormat = lists:concat([?DB_JSON_LENGTH, Format]),
+    WFormat = io_lib:format(PreWFormat, [Field]),
     {ok, WFormat}.
