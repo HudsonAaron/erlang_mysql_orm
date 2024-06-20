@@ -114,10 +114,6 @@ parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) w
     {ok, Fields} = db_util:get_fields([FieldID], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
-parse_select_fields_1([Field | Tail], TotalFields, OldFieldsFormat, SelVals) when is_list(Field) andalso Field /= "''" andalso Field /= "\"\"" ->
-    {ok, Fields} = db_util:get_fields([Field], TotalFields),
-    FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
-    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
 parse_select_fields_1([Field | Tail], TotalFields, OldFieldsFormat, SelVals) ->
     FieldsFormat = OldFieldsFormat ++ [Field],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals).
