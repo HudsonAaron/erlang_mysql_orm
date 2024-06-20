@@ -9,7 +9,7 @@
 -author("zhuhaolin").
 -ifndef(DB_ORM).
 -define(DB_ORM, true).
--define(DB_VERSION, "v1.5.3"). %% 版本 2024-06-20
+-define(DB_VERSION, "v1.5.2"). %% 版本 2024-06-06
 
 -define(DB_NULL,                     "null").                            %% null值
 %% 标识符 - 与或非门

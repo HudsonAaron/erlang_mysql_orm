@@ -110,8 +110,12 @@ parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVa
 parse_select_fields_1([{KFormat, K} | Tail], TotalFields, OldFieldsFormat, SelVals) ->
     FieldsFormat = OldFieldsFormat ++ [io_lib:format(KFormat, [K])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
-parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) orelse is_atom(FieldID) orelse is_list(FieldID) ->
+parse_select_fields_1([FieldID | Tail], TotalFields, OldFieldsFormat, SelVals) when is_integer(FieldID) orelse is_atom(FieldID) ->
     {ok, Fields} = db_util:get_fields([FieldID], TotalFields),
+    FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
+    parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
+parse_select_fields_1([Field | Tail], TotalFields, OldFieldsFormat, SelVals) when is_list(Field) andalso Field /= "''" andalso Field /= "\"\"" ->
+    {ok, Fields} = db_util:get_fields([Field], TotalFields),
     FieldsFormat = OldFieldsFormat ++ [io_lib:format("`~s`", [Fields])],
     parse_select_fields_1(Tail, TotalFields, FieldsFormat, SelVals);
 parse_select_fields_1([Field | Tail], TotalFields, OldFieldsFormat, SelVals) ->
